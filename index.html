@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Quantum Quiz Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        
+        :root {
+            --bg-main: #060608;
+            --glass: rgba(17, 17, 25, 0.9);
+            --accent: #00f2ff;
+        }
+
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: var(--bg-main); 
+            color: #ffffff;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .glass {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-item.active {
+            background: rgba(0, 242, 255, 0.1);
+            color: var(--accent);
+        }
+
+        @media (min-width: 768px) {
+            .sidebar-item.active {
+                border-right: 3px solid var(--accent);
+            }
+        }
+
+        .quantum-gradient {
+            background: linear-gradient(135deg, #00f2ff 0%, #0072ff 100%);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .view-animate { animation: fadeIn 0.4s ease-out forwards; }
+
+        /* Custom mobile tweaks */
+        @media (max-width: 767px) {
+            .mobile-bottom-nav { border-top: 1px solid rgba(255,255,255,0.1); }
+            .content-area { padding-bottom: 80px; }
+        }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="h-screen flex flex-col md:flex-row">
+
+    <!-- Schermata Onboarding -->
+    <div id="login-screen" class="fixed inset-0 z-[100] bg-black flex items-center justify-center p-4 hidden">
+        <div class="glass p-8 md:p-12 rounded-[2.5rem] w-full max-w-md text-center border-white/10 shadow-2xl">
+            <div class="w-16 h-16 quantum-gradient rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(0,242,255,0.3)]">
+                <i data-lucide="atom" class="w-10 h-10 text-black"></i>
+            </div>
+            <h1 class="text-3xl font-black mb-2">Francesca Tancredi ti da il Benvenuto</h1>
+            <p class="text-zinc-400 mb-8 text-sm">Inserisci il tuo nome per accedere al terminale di ricerca.</p>
+            <input type="text" id="username-input" placeholder="Nome utente" 
+                class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl text-white outline-none focus:border-cyan-500 mb-6 text-center text-lg font-bold transition-all">
+            <button onclick="handleLogin()" class="w-full quantum-gradient text-black font-black py-4 rounded-2xl uppercase tracking-widest hover:brightness-110 active:scale-95 transition-all">
+                Inizia Ricerca
+            </button>
+        </div>
+    </div>
+
+    <!-- Desktop Sidebar / Mobile Bottom Nav -->
+    <aside id="sidebar" class="fixed bottom-0 left-0 right-0 md:relative md:w-64 md:h-full glass md:flex md:flex-col border-r border-white/5 z-50 mobile-bottom-nav hidden">
+        <div class="hidden md:block p-8">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 quantum-gradient rounded-lg flex items-center justify-center">
+                    <i data-lucide="atom" class="w-5 h-5 text-black"></i>
+                </div>
+                <span class="font-extrabold tracking-tighter text-xl">QUANTUM</span>
+            </div>
+        </div>
+
+        <nav class="flex md:flex-col flex-row justify-around md:justify-start md:mt-4 p-2 md:px-4 md:space-y-2">
+            <button onclick="setView('home')" id="nav-home" class="sidebar-item flex-1 md:flex-none flex flex-col md:flex-row items-center gap-1 md:gap-4 px-4 py-3 rounded-xl text-zinc-400">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 md:w-6 md:h-6"></i>
+                <span class="text-[10px] md:text-sm font-semibold">Dashboard</span>
+            </button>
+            <button onclick="setView('profile')" id="nav-profile" class="sidebar-item flex-1 md:flex-none flex flex-col md:flex-row items-center gap-1 md:gap-4 px-4 py-3 rounded-xl text-zinc-400">
+                <i data-lucide="user" class="w-5 h-5 md:w-6 md:h-6"></i>
+                <span class="text-[10px] md:text-sm font-semibold">Profilo</span>
+            </button>
+            <button onclick="setView('stats')" id="nav-stats" class="sidebar-item flex-1 md:flex-none flex flex-col md:flex-row items-center gap-1 md:gap-4 px-4 py-3 rounded-xl text-zinc-400">
+                <i data-lucide="bar-chart-3" class="w-5 h-5 md:w-6 md:h-6"></i>
+                <span class="text-[10px] md:text-sm font-semibold">Stats</span>
+            </button>
+            <button onclick="logout()" class="flex-1 md:flex-none flex flex-col md:flex-row items-center gap-1 md:gap-4 px-4 py-3 rounded-xl text-zinc-400 md:hidden">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span class="text-[10px] font-semibold">Esci</span>
+            </button>
+        </nav>
+
+        <div class="hidden md:block p-6 mt-auto border-t border-white/5">
+            <button onclick="logout()" class="flex items-center gap-4 text-zinc-500 hover:text-red-400 px-4 py-2 transition-colors">
+                <i data-lucide="log-out" class="w-5 h-5"></i>
+                <span class="font-semibold">Esci</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 h-full overflow-y-auto content-area relative bg-[#08080a] no-scrollbar">
+        <header id="header-main" class="sticky top-0 w-full p-6 flex justify-between items-center z-40 bg-[#08080a]/80 backdrop-blur-md hidden">
+            <h2 id="view-title" class="text-xl md:text-2xl font-bold tracking-tight">Benvenuto</h2>
+            <div class="flex items-center gap-3">
+                <div class="text-right">
+                    <p id="user-display-name" class="text-xs md:text-sm font-bold truncate max-w-[80px] md:max-w-none">Ospite</p>
+                    <p class="text-[8px] md:text-[10px] text-zinc-500 uppercase tracking-widest font-bold">Livello 1</p>
+                </div>
+                <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-zinc-800 border border-white/10 flex items-center justify-center">
+                    <i data-lucide="user" class="w-4 h-4 md:w-5 md:h-5 text-zinc-400"></i>
+                </div>
+            </div>
+        </header>
+
+        <div id="content" class="p-4 md:p-8 max-w-5xl mx-auto">
+            <!-- Contenuto dinamico -->
+        </div>
+    </main>
+
+    <script>
+        const QUESTIONS_POOL = [
+            { q: "Chi ha scoperto che l'energia è quantizzata?", a: ["Einstein", "Planck", "Newton", "Tesla"], c: 1 },
+            { q: "Quale particella trasporta la forza forte?", a: ["Fotone", "Gluone", "Bosone Z", "Gravitone"], c: 1 },
+            { q: "Cos'è il principio di esclusione di Pauli?", a: ["Due fermioni non possono avere stessi stati", "La gravità attira tutto", "L'energia si conserva", "Le onde sono particelle"], c: 0 },
+            { q: "Qual è lo spin di un elettrone?", a: ["0", "1", "1/2", "2"], c: 2 },
+            { q: "L'esperimento di Young dimostra:", a: ["La massa", "Il dualismo onda-particella", "La velocità luce", "La gravità"], c: 1 },
+            { q: "Cosa descrive l'equazione di Schrödinger?", a: ["La forza G", "L'evoluzione dell'onda di probabilità", "Il calore", "La pressione"], c: 1 },
+            { q: "Quale particella non ha massa?", a: ["Elettrone", "Fotone", "Neutrone", "Protone"], c: 1 },
+            { q: "Il collasso della funzione d'onda avviene con:", a: ["Il tempo", "Il calore", "L'osservazione", "Il moto"], c: 2 },
+            { q: "Cos'è un Quark?", a: ["Un atomo", "Un costituente dei nucleoni", "Un raggio laser", "Un buco nero"], c: 1 },
+            { q: "Chi ha parlato di 'azione a distanza spettrale'?", a: ["Bohr", "Einstein", "Feynman", "Dirac"], c: 1 },
+            // Aggiungo altre 40 domande sintetiche per arrivare a 50
+            { q: "Le particelle con spin semi-intero sono:", a: ["Bosoni", "Fermioni", "Neutrini", "Mesoni"], c: 1 },
+            { q: "Qual è la carica elettrica di un neutrone?", a: ["+1", "-1", "0", "Varia"], c: 2 },
+            { q: "Cosa sono i 'Cooper pairs'?", a: ["Coppie di fotoni", "Coppie di elettroni in superconduttori", "Coppie di quark", "Nuclei atomici"], c: 1 },
+            { q: "Un esempio di bosone è:", a: ["Elettrone", "Fotone", "Protone", "Quark"], c: 1 },
+            { q: "Il limite di Chandrasekhar riguarda:", a: ["Atomi", "Stelle nane bianche", "Molecole", "Quark"], c: 1 },
+            { q: "Cos'è un fotone?", a: ["Un atomo", "Un quanto di luce", "Una cellula", "Un raggio X"], c: 1 },
+            { q: "L'effetto tunnel permette di:", a: ["Viaggiare nel tempo", "Superare barriere di potenziale", "Scaldare l'acqua", "Volare"], c: 1 },
+            { q: "Quale forza tiene uniti i quark?", a: ["Gravità", "Elettromagnetismo", "Forza Forte", "Forza Debole"], c: 2 },
+            { q: "La costante di struttura fine è circa:", a: ["1/137", "3.14", "42", "1/10"], c: 0 },
+            { q: "Cos'è la QED?", a: ["Elettrodinamica Quantistica", "Energia Diretta", "Quark Esterni", "Dinamica Qualitativa"], c: 0 },
+            { q: "Chi ha teorizzato l'antimateria?", a: ["Fermi", "Dirac", "Higgs", "Curie"], c: 1 },
+            { q: "Qual è la massa a riposo di un fotone?", a: ["1 g", "Elettronvolt", "Zero", "Variabile"], c: 2 },
+            { q: "Il principio di indeterminazione lega:", a: ["Massa e Tempo", "Posizione e Momento", "Carica e Spin", "Luce e Suono"], c: 1 },
+            { q: "Il bosone di Higgs conferisce:", a: ["Carica", "Spin", "Massa", "Colore"], c: 2 },
+            { q: "Un sistema quantistico isolato evolve in modo:", a: ["Caotico", "Unitario", "Lento", "Termico"], c: 1 },
+            { q: "Cosa sono i gravitoni?", a: ["Particelle del suono", "Ipotetici mediatori della gravità", "Piccole rocce", "Nuclei pesanti"], c: 1 },
+            { q: "Il paradosso EPR riguarda:", a: ["Efficienza", "Entanglement", "Energia", "Elettroni"], c: 1 },
+            { q: "La lunghezza d'onda di de Broglie dipende da:", a: ["Colore", "Quantità di moto", "Temperatura", "Volume"], c: 1 },
+            { q: "Un 'Qubit' può essere:", a: ["0 o 1", "Solo 0", "Solo 1", "0 e 1 simultaneamente"], c: 3 },
+            { q: "Il modello atomico di Bohr introduce:", a: ["Orbitali ellittici", "Livelli energetici quantizzati", "Nucleo solido", "Nessun nucleo"], c: 1 },
+            { q: "Un acceleratore di particelle famoso è:", a: ["NASA", "LHC (CERN)", "SpaceX", "MIT"], c: 1 },
+            { q: "Il colore dei quark è:", a: ["Reale", "Una proprietà quantistica", "Dovuto alla luce", "Un errore"], c: 1 },
+            { q: "I neutrini interagiscono tramite forza:", a: ["Forte", "Debole", "Elettromagnetica", "Nessuna"], c: 1 },
+            { q: "Quale scienziato ha scoperto il neutrone?", a: ["Chadwick", "Thomson", "Rutherford", "Fermi"], c: 0 },
+            { q: "Il vuoto quantistico è:", a: ["Totalmente vuoto", "Pieno di fluttuazioni di energia", "Freddo assoluto", "Impossibile"], c: 1 },
+            { q: "Cos'è lo scattering?", a: ["Fusione", "Diffusione/Deviazione di particelle", "Rottura", "Emissione"], c: 1 },
+            { q: "La spettroscopia studia:", a: ["Ossa", "Interazione luce-materia", "Stelle lontane", "Velocità"], c: 1 },
+            { q: "Un superconduttore espelle:", a: ["Calore", "Campi magnetici (Effetto Meissner)", "Elettroni", "Luce"], c: 1 },
+            { q: "Cosa significa 'Entanglement'?", a: ["Rottura", "Correlazione/Intreccio", "Scomparsa", "Fusione"], c: 1 },
+            { q: "Il protone è composto da:", a: ["Solo elettroni", "2 quark Up e 1 Down", "3 quark Down", "Neutroni"], c: 1 },
+            { q: "L'elettrone è un:", a: ["Adrone", "Leptone", "Mesone", "Bosone"], c: 1 },
+            { q: "La radiazione di Hawking riguarda:", a: ["Atomi", "Buchi neri", "Pianeti", "Onde radio"], c: 1 },
+            { q: "La 'Superposizione' permette a una particella di:", a: ["Essere in più stati", "Essere ovunque", "Non esistere", "Muoversi sempre"], c: 0 },
+            { q: "Il simbolo 'psi' (ψ) rappresenta:", a: ["Energia", "Funzione d'onda", "Frequenza", "Massa"], c: 1 },
+            { q: "Qual è la particella di Dio?", a: ["Fotone", "Bosone di Higgs", "Gravitone", "Quark Top"], c: 1 },
+            { q: "La meccanica delle matrici è di:", a: ["Einstein", "Heisenberg", "Schrödinger", "Bohr"], c: 1 },
+            { q: "In un computer quantistico si usa:", a: ["Bit", "Qubit", "Byte", "Pixel"], c: 1 },
+            { q: "La costante di Boltzmann lega:", a: ["Energia e Temperatura", "Massa e Luce", "Spazio e Tempo", "Spin e Carica"], c: 0 },
+            { q: "Il gatto di Schrödinger è vivo o morto?", a: ["Sempre vivo", "Sempre morto", "Entrambi finché non osservato", "Nessuno dei due"], c: 2 },
+            { q: "Cos'è l'annichilazione?", a: ["Nascita", "Scontro materia-antimateria", "Divisione cellulare", "Raffreddamento"], c: 1 }
+        ];
+
+        let state = {
+            view: 'home',
+            user: JSON.parse(localStorage.getItem('quantum_user')) || null,
+            quiz: {
+                active: false,
+                currentQuestions: [],
+                index: 0,
+                answers: [],
+                timeLeft: 300,
+                timer: null
+            }
+        };
+
+        const handleLogin = () => {
+            const nameInput = document.getElementById('username-input');
+            const name = nameInput.value.trim();
+            if (name.length < 2) return;
+            state.user = { name, tests: 0, bestScore: 0, totalPoints: 0 };
+            localStorage.setItem('quantum_user', JSON.stringify(state.user));
+            checkAuth();
+        };
+
+        const checkAuth = () => {
+            if (!state.user) {
+                document.getElementById('login-screen').classList.remove('hidden');
+                document.getElementById('sidebar').classList.add('hidden');
+                document.getElementById('header-main').classList.add('hidden');
+            } else {
+                document.getElementById('login-screen').classList.add('hidden');
+                document.getElementById('sidebar').classList.remove('hidden', 'md:hidden');
+                document.getElementById('header-main').classList.remove('hidden');
+                render();
+            }
+        };
+
+        const setView = (v) => {
+            if (state.quiz.active) return;
+            state.view = v;
+            document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+            document.getElementById(`nav-${v}`).classList.add('active');
+            render();
+        };
+
+        const render = () => {
+            const container = document.getElementById('content');
+            const title = document.getElementById('view-title');
+            document.getElementById('user-display-name').innerText = state.user.name;
+
+            if (state.quiz.active) {
+                renderQuiz(container);
+                return;
+            }
+
+            switch(state.view) {
+                case 'home':
+                    title.innerText = "Dashboard";
+                    container.innerHTML = `
+                        <div class="view-animate space-y-6">
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                <div class="glass p-5 rounded-3xl">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase mb-1">Test</p>
+                                    <h3 class="text-2xl font-black">${state.user.tests}</h3>
+                                </div>
+                                <div class="glass p-5 rounded-3xl">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase mb-1">Record</p>
+                                    <h3 class="text-2xl font-black text-cyan-400">${state.user.bestScore}%</h3>
+                                </div>
+                                <div class="glass p-5 rounded-3xl col-span-2 md:col-span-1">
+                                    <p class="text-zinc-500 text-[10px] font-bold uppercase mb-1">Punti Totali</p>
+                                    <h3 class="text-2xl font-black text-purple-400">${state.user.totalPoints}</h3>
+                                </div>
+                            </div>
+                            <div class="glass p-8 md:p-12 rounded-[2.5rem] text-center">
+                                <h2 class="text-3xl md:text-5xl font-black mb-4">Esame Livello 1</h2>
+                                <p class="text-zinc-400 text-sm md:text-base max-w-md mx-auto mb-8">Modulo da 10 quesiti estratti da un database di 50. Tempo limite: 5 minuti.</p>
+                                <button onclick="startQuiz()" class="w-full md:w-auto quantum-gradient text-black px-12 py-5 rounded-2xl font-black uppercase tracking-widest hover:scale-105 transition-all shadow-[0_10px_30px_rgba(0,242,255,0.2)]">
+                                    Inizia Test
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'profile':
+                    title.innerText = "Profilo";
+                    container.innerHTML = `
+                        <div class="view-animate glass p-8 rounded-[2.5rem]">
+                            <div class="flex flex-col md:flex-row items-center gap-6 mb-8">
+                                <div class="w-20 h-20 rounded-2xl quantum-gradient flex items-center justify-center text-black">
+                                    <i data-lucide="user" class="w-10 h-10"></i>
+                                </div>
+                                <div class="text-center md:text-left">
+                                    <h3 class="text-3xl font-black">${state.user.name}</h3>
+                                    <p class="text-cyan-400 font-bold text-sm tracking-widest uppercase">Quantum Explorer</p>
+                                </div>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-2xl border border-white/5 flex justify-between">
+                                <span class="text-zinc-400">ID Utente</span>
+                                <span class="font-mono text-zinc-300">#${Math.random().toString(36).substr(2, 9).toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'stats':
+                    title.innerText = "Statistiche";
+                    container.innerHTML = `
+                        <div class="view-animate glass p-8 rounded-[2.5rem]">
+                            <h3 class="text-xl font-bold mb-6">Performance Recente</h3>
+                            <div class="space-y-6">
+                                <div>
+                                    <div class="flex justify-between mb-2">
+                                        <span class="text-sm font-bold text-zinc-400">Precisione Massima</span>
+                                        <span class="text-sm font-bold text-cyan-400">${state.user.bestScore}%</span>
+                                    </div>
+                                    <div class="h-2 bg-white/5 rounded-full overflow-hidden">
+                                        <div class="h-full quantum-gradient" style="width: ${state.user.bestScore}%"></div>
+                                    </div>
+                                </div>
+                                <p class="text-xs text-zinc-500 italic text-center">Ogni test affrontato migliora la tua capacità di analisi delle stringhe quantistiche.</p>
+                            </div>
+                        </div>
+                    `;
+                    break;
+            }
+            lucide.createIcons();
+        };
+
+        const renderQuiz = (container) => {
+            const q = state.quiz.currentQuestions[state.quiz.index];
+            const progress = ((state.quiz.index + 1) / 10) * 100;
+            
+            container.innerHTML = `
+                <div class="view-animate max-w-2xl mx-auto pb-20">
+                    <div class="flex justify-between items-center mb-6">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 rounded-xl glass flex items-center justify-center text-cyan-400 font-black">
+                                ${state.quiz.index + 1}
+                            </div>
+                            <div class="h-1 w-20 md:w-40 bg-white/5 rounded-full overflow-hidden">
+                                <div class="h-full quantum-gradient transition-all" style="width: ${progress}%"></div>
+                            </div>
+                        </div>
+                        <span id="quiz-timer" class="text-xl font-black font-mono text-cyan-400">05:00</span>
+                    </div>
+
+                    <div class="glass p-6 md:p-10 rounded-[2.5rem] border border-cyan-500/20">
+                        <h2 class="text-xl md:text-2xl font-bold mb-8 leading-tight">${q.q}</h2>
+                        <div class="grid gap-3">
+                            ${q.a.map((opt, i) => `
+                                <button onclick="selectOption(${i})" 
+                                    class="w-full p-4 md:p-5 text-left rounded-2xl border transition-all ${state.quiz.answers[state.quiz.index] === i ? 'bg-cyan-500 border-cyan-500 text-black font-bold' : 'bg-white/5 border-white/5 text-zinc-400 active:bg-white/10'}">
+                                    <span class="inline-block w-6 font-mono opacity-50">${String.fromCharCode(65+i)}.</span> ${opt}
+                                </button>
+                            `).join('')}
+                        </div>
+                        <div class="mt-8 flex justify-between items-center">
+                            <span class="text-[10px] text-zinc-600 font-black uppercase">Domanda ${state.quiz.index + 1} di 10</span>
+                            <button onclick="nextQuestion()" class="bg-white text-black px-8 py-3 rounded-xl font-black uppercase text-xs hover:bg-cyan-400 active:scale-95 transition-all">
+                                ${state.quiz.index === 9 ? 'Invia' : 'Avanti'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            updateTimerDisplay();
+            lucide.createIcons();
+        };
+
+        window.startQuiz = () => {
+            state.quiz.active = true;
+            state.quiz.index = 0;
+            state.quiz.answers = [];
+            state.quiz.timeLeft = 300;
+            
+            // Estrae 10 domande casuali dal pool di 50
+            state.quiz.currentQuestions = [...QUESTIONS_POOL]
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 10);
+            
+            state.quiz.timer = setInterval(() => {
+                state.quiz.timeLeft--;
+                if(state.quiz.timeLeft <= 0) endQuiz();
+                else updateTimerDisplay();
+            }, 1000);
+            render();
+        };
+
+        window.updateTimerDisplay = () => {
+            const el = document.getElementById('quiz-timer');
+            if(!el) return;
+            const m = Math.floor(state.quiz.timeLeft / 60);
+            const s = state.quiz.timeLeft % 60;
+            el.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+            if(state.quiz.timeLeft < 60) el.classList.add('text-red-500');
+        };
+
+        window.selectOption = (i) => {
+            state.quiz.answers[state.quiz.index] = i;
+            render();
+        };
+
+        window.nextQuestion = () => {
+            if(state.quiz.answers[state.quiz.index] === undefined) return;
+            if(state.quiz.index < 9) {
+                state.quiz.index++;
+                render();
+            } else {
+                endQuiz();
+            }
+        };
+
+        const endQuiz = () => {
+            clearInterval(state.quiz.timer);
+            let correct = 0;
+            state.quiz.currentQuestions.forEach((q, i) => {
+                if(state.quiz.answers[i] === q.c) correct++;
+            });
+            
+            const score = (correct / 10) * 100;
+            state.user.tests += 1;
+            if(score > state.user.bestScore) state.user.bestScore = score;
+            state.user.totalPoints += (correct * 100);
+            localStorage.setItem('quantum_user', JSON.stringify(state.user));
+
+            state.quiz.active = false;
+            
+            const container = document.getElementById('content');
+            container.innerHTML = `
+                <div class="view-animate text-center max-w-sm mx-auto">
+                    <div class="glass p-10 rounded-[3rem] border border-cyan-500/20 shadow-2xl">
+                        <div class="w-20 h-20 quantum-gradient rounded-full flex items-center justify-center mx-auto mb-6 text-black">
+                            <i data-lucide="award" class="w-10 h-10"></i>
+                        </div>
+                        <h2 class="text-2xl font-black mb-2 uppercase tracking-tighter">Missione Conclusa</h2>
+                        <div class="text-5xl font-black text-cyan-400 mb-6">${score}%</div>
+                        <div class="grid grid-cols-2 gap-4 mb-8">
+                            <div class="bg-white/5 p-4 rounded-2xl">
+                                <p class="text-[10px] text-zinc-500 uppercase font-bold">Risposte</p>
+                                <p class="text-xl font-black text-white">${correct}/10</p>
+                            </div>
+                            <div class="bg-white/5 p-4 rounded-2xl">
+                                <p class="text-[10px] text-zinc-500 uppercase font-bold">XP Bonus</p>
+                                <p class="text-xl font-black text-purple-400">+${correct * 100}</p>
+                            </div>
+                        </div>
+                        <button onclick="setView('home')" class="w-full bg-white text-black py-4 rounded-2xl font-black uppercase text-xs tracking-widest hover:bg-cyan-400 transition-all">
+                            Torna al Terminale
+                        </button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        };
+
+        window.logout = () => {
+            localStorage.removeItem('quantum_user');
+            state.user = null;
+            location.reload();
+        };
+
+        checkAuth();
+    </script>
+</body>
+</html>
